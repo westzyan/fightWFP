@@ -280,4 +280,5 @@ if __name__ == '__main__':
             os.system(cmd)
             time.sleep(2)
         time.sleep(3)
+        logger.info("结束第%s轮次捕获", i + 1)
 
