@@ -14,10 +14,11 @@ def mkdir(path):
 
 
 if __name__ == '__main__':
-    url_list = []
-    with open("../aleax_top.txt", "r") as f:
-        for line in f.readlines():
-            line = line.strip('\n')  # 去掉列表中每一个元素的换行符
-            mkdir("../aleaxtop50/" + line)
-            url_list.append(line)
-    print(url_list)
+    # url_list = []
+    # with open("../aleax_top.txt", "r") as f:
+    #     for line in f.readlines():
+    #         line = line.strip('\n')  # 去掉列表中每一个元素的换行符
+    #         mkdir("../aleaxtop50/" + line)
+    #         url_list.append(line)
+    # print(url_list)
+    mkdir("./" + str(1))

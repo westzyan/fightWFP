@@ -15,7 +15,6 @@ urllib3.disable_warnings()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
 start_white_list = ["android-app:", "ios-app", "https://accounts.google.com/ServiceLogin?", "https:&#x2F;",
                     "//creativecommons", "https://chrome.google.com/webstore", "'+m[0].params.src+'", "'+r"]
 end_white_list = ["/", ".com", ".mp4", ".mp3", ".net", ".org", ".cn", ".us", "p=iframe-alerts", ".ms", "/en-us"]
@@ -205,16 +204,29 @@ cf.read(configpath)  # 读取配置文件
 
 eth_name = cf.get("eth", "name")
 filepath = cf.get("eth", "path")
+round_start = int(cf.get("eth", "start"))
+round_end = int(cf.get("eth", "end"))
 
 
-def simulation_collect(url, round):
+def simulation_collect(url, round_number):
     # 模拟收集流量，并保存
-    cmd = "tcpdump -i " + eth_name + " -w " + filepath + url.split("/")[-1] + "_" + str(round) + ".pcap"
+    cmd = "tcpdump -i " + eth_name + " -w " + filepath + "round" + str(round_number) + "/" + url.split("/")[
+        -1] + ".pcap"
     logger.info(cmd)
     os.system(cmd)
 
 
-if __name__ == '__main__':
+def mkdir_save(filepath):
+    for item in range(100):
+        path = filepath + "/round" + str(item)
+        path = path.strip()
+        # 去除尾部 \ 符号
+        path = path.rstrip("\\")
+        is_exists = os.path.exists(path)
+        if not is_exists:
+            os.makedirs(path)
+
+
     # host = "https://amazon.com"
     # # 获取原始HTML文本
     # html = get_origin_website_html(host)
@@ -243,20 +255,29 @@ if __name__ == '__main__':
     # get_defense_traffic("https://adobe.com")
     # time2 = time.time()
     # print("共用时：", time2 - time1)
+
+if __name__ == '__main__':
     url_list = []
     with open("../aleax_top.txt", "r") as f:
         for line in f.readlines():
             line = line.strip('\n')  # 去掉列表中每一个元素的换行符
             url_list.append(line)
     print(url_list)
+    f.close()
+    mkdir_save(filepath)
     executor = ProcessPoolExecutor(max_workers=10)
-    for item in url_list:
-        executor.submit(simulation_collect, item, 7)
-        try:
-            get_defense_traffic(item)
-        except Exception as e:
-            logger.error("%s 遇到错误：%s", item, str(e))
-        time.sleep(20)
-        cmd = "ps -ef | grep 'tcpdump -i' | grep -v grep | awk '{print $2}' | xargs kill -9"
-        os.system(cmd)
-        time.sleep(2)
+
+    for i in range(round_start, round_end):
+        logger.info("开始第%s轮次捕获", i + 1)
+        for item in url_list:
+            executor.submit(simulation_collect, item, i)
+            try:
+                get_defense_traffic(item)
+            except Exception as e:
+                logger.error("%s 遇到错误：%s", item, str(e))
+            time.sleep(15)
+            cmd = "ps -ef | grep 'tcpdump -i' | grep -v grep | awk '{print $2}' | xargs kill -9"
+            os.system(cmd)
+            time.sleep(2)
+        time.sleep(3)
+
