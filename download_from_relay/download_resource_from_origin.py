@@ -1,5 +1,5 @@
-from directory_server_util.resource_scheduling import read_resource_data
-from download_from_relay.download_util import download_file
+from resource_scheduling import read_resource_data
+from download_util import download_file
 
 
 def download_resource(resources_list):

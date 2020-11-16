@@ -227,35 +227,6 @@ def mkdir_save(filepath):
             os.makedirs(path)
 
 
-    # host = "https://amazon.com"
-    # # 获取原始HTML文本
-    # html = get_origin_website_html(host)
-    # # 初步解析里面的资源
-    # resources = parse_web_resource(html)
-    # for item in resources:
-    #     print(item)
-    # print("-------------------------------------")
-    # # 去除非法资源，分类不同下载渠道的资源，并填充对应的url,使得可以直接下载
-    # origin_set, relay_resource_set = search_resource_in_relay2(host, resources)
-    # print("-------------------------------------")
-    # for item in origin_set:
-    #     print(item)
-    #     get_resource(item)
-    # print("---------------------------------------")
-    # for item in relay_resource_set:
-    #     print(item)
-    #     get_resource(item)
-    # time1 = time.time()
-    # simulation_browsing_website("http://youtube.com", "/home/zyan/test")
-    # time2 = time.time()
-    # print("共用时：", time2 - time1)
-    # a = "fdasfaf"
-    # print(a[1:-1])
-    # time1 = time.time()
-    # get_defense_traffic("https://adobe.com")
-    # time2 = time.time()
-    # print("共用时：", time2 - time1)
-
 if __name__ == '__main__':
     url_list = []
     with open("../aleax_top.txt", "r") as f:
@@ -281,4 +252,3 @@ if __name__ == '__main__':
             time.sleep(2)
         time.sleep(3)
         logger.info("结束第%s轮次捕获", i + 1)
-

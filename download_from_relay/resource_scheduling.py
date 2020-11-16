@@ -1,6 +1,22 @@
-from bean.ServerResource import ServerResource
-from directory_server_util.get_resource_location_pool import POOL
+from ServerResource import ServerResource
+from get_resource_location_pool import POOL
 import uuid
+
+
+def delete_resource_from_DB():
+    conn = POOL.connection()
+    cursor = conn.cursor()
+    sql = "delete from  resource_location where id > 0"
+    try:
+        cursor.execute(sql)
+        conn.commit()
+        print("删除数据成功！")
+    except Exception as e:
+        print("删除数据失败：case%s" % e)
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def create_resource_data(url, resource):

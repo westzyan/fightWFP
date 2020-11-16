@@ -17,15 +17,11 @@ https://vk.com
 https://instagram.com
 https://www.alipay.com
 https://csdn.net
-https://twitch.tv
 https://zhanqi.tv
 https://naver.com
-https://bing.com
-https://ebay.com
 https://apple.com
 https://aliexpress.com
 https://stackoverflow.com
-https://livejasmin.com
 https://adobe.com
 https://tribunnews.com
 https://yandex.ru
@@ -47,7 +43,6 @@ https://twitter.com
 https://force.com
 https://craigslist.org
 https://livejasmin.com
-https://aliexpress.com
 https://wellsfargo.com
 https://indeed.com
 https://breitbart.com

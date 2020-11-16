@@ -3,7 +3,7 @@ import requests
 import urllib3
 import logging
 from requests.adapters import HTTPAdapter
-
+from resource_scheduling import read_resource_data
 urllib3.disable_warnings()
 s = requests.session()
 s.keep_alive = False

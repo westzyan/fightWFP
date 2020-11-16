@@ -2,10 +2,14 @@ import re
 import requests
 import time
 import urllib3
-from directory_server_util.resource_scheduling import create_resource_data, save_resource_data
-
+import logging
+import os
+from resource_scheduling import create_resource_data, save_resource_data, delete_resource_from_DB, read_resource_data
+from concurrent.futures import ProcessPoolExecutor, as_completed
 urllib3.disable_warnings()
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # 输入网址url，获取对应的html
 def get_html(url):
@@ -68,6 +72,8 @@ def url_fill(url, resources):
                 new_js_set.add("https:" + item)
             elif item.startswith("./"):
                 new_js_set.add(url + item[1:])
+            elif not item.startswith("/"):
+                new_js_set.add(url + "/" + item)
             else:
                 new_js_set.add(url + item)
         else:
@@ -78,12 +84,45 @@ def url_fill(url, resources):
                 new_css_set.add("https:" + item)
             elif item.startswith("./"):
                 new_css_set.add(url + item[1:])
+            elif not item.startswith("/"):
+                new_css_set.add(url + "/" + item)
             else:
                 new_css_set.add(url + item)
         else:
             new_css_set.add(item)
     full_resources_list = [new_js_set, new_css_set]
     return full_resources_list
+
+
+def download_file(url, filename=None, filepath=None):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0'
+    }
+    proxies = {
+        'http': 'socks5h://127.0.0.1:1080',
+        'https': 'socks5h://127.0.0.1:1080'
+    }
+    if filename is None:
+        filename = url.split('/')[-1]
+    response = requests.get(url, headers=headers, proxies=proxies, verify=False)
+    with open(filepath + "/" + filename, "wb") as file:
+        file.write(response.content)
+    file.close()
+
+
+def download_resource(resources_list):
+    count = 0
+    for item in resources_list:
+        count += 1
+        print("正在下载第", count)
+        download_file(item[2], item[3], "../aleaxtop50/")
+        print(item[2] + "下载完毕")
+
+
+def download_resource_single(resource, i):
+    logger.info("正在下载第%s个:%s", i, resource[2])
+    download_file(resource[2], resource[3], "/media/zyan/文档/毕业设计/code/aleaxtop50/")
+    logger.info("%s下载完毕", resource[2] )
 
 
 if __name__ == '__main__':
@@ -105,5 +144,21 @@ if __name__ == '__main__':
             save_list += resource_list
         except Exception as e:
             print(url, "遇到错误" + str(e))
+    delete_resource_from_DB()
+    time.sleep(5)
     save_resource_data(save_list)
+    time.sleep(2)
+    cmd = "rm -r /media/zyan/文档/毕业设计/code/aleaxtop50/*"
+    os.system(cmd)
+    r_list = read_resource_data()
+    executor = ProcessPoolExecutor(max_workers=20)
+    try:
+        for i in range(len(r_list)):
+            executor.submit(download_resource_single, r_list[i], i)
+    except Exception as e:
+        print(str(e))
+    finally:
+        executor.shutdown()
+
+
 
