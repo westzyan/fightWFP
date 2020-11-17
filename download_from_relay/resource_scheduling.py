@@ -25,12 +25,12 @@ def create_resource_data(url, resource):
     js_set = resource[0]
     css_set = resource[1]
     for item in js_set:
-        server_resource = ServerResource(1, url, item, str(uuid.uuid4()) + ".js", "[108.61.89.249,207.246.88.214]",
-                                         str(uuid.uuid4()))
+        server_resource = ServerResource(1, url, item, str(uuid.uuid4()) + ".js", "[108.61.89.249,207.246.88.214,"
+                                                                                  "101.32.164.202]", str(uuid.uuid4()))
         server_resource_list.append(server_resource)
     for item in css_set:
-        server_resource = ServerResource(1, url, item, str(uuid.uuid4()) + ".css", "[108.61.89.249,207.246.88.214]",
-                                         str(uuid.uuid4()))
+        server_resource = ServerResource(1, url, item, str(uuid.uuid4()) + ".css", "[108.61.89.249,207.246.88.214,"
+                                                                                   "101.32.164.202]", str(uuid.uuid4()))
         server_resource_list.append(server_resource)
     return server_resource_list
 

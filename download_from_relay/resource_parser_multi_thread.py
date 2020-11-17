@@ -25,14 +25,14 @@ def get_html(url):
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 '
                       'Safari/537.36 '
     }
-    print(url)
+    logger.info("开始获取 %s 原始页面", url)
     requests.DEFAULT_RETRIES = 5
 
     response = requests.get(url, headers=headers, proxies=proxies, verify=False)
     if response.status_code != 200:
-        print(url, "status_code:", response.status_code)
+        logger.error("host: %s, status code: %s", url, response.status_code)
         return ""
-    print(response.status_code)
+    logger.info("host: %s, status code: %s", url, response.status_code)
     html = str(response.text)
     return html
 
@@ -47,14 +47,14 @@ def match_resource(html):
     patterns = [r"<link.*?href=\"(.*?)\"", r"src=\"(.*?)\""]
     for pattern in patterns:
         matchs = re.findall(pattern, html)
-        print("matchs:", matchs)
+        logger.info("matchs:%s", matchs)
         if matchs:
             for match in matchs:
                 if '.js' in match and '.json' not in match:
                     js_set.add(str(match))
                 if '.css' in match:
                     css_set.add(match)
-    print(js_set)
+    logger.info("js_set: %s", js_set)
     resources_list = [js_set, css_set]
     return resources_list
 
@@ -125,6 +125,19 @@ def download_resource_single(resource, i):
     logger.info("%s下载完毕", resource[2] )
 
 
+def parse(url):
+    try:
+        html = get_html(url)
+        resources = match_resource(html)
+        resources = url_fill(url, resources)
+        logger.info("host:%s, resources: %s", url, resources)
+        resource_list = create_resource_data(url, resources)
+        return resource_list
+    except Exception as e:
+        logger.info("parse %s 遇到错误: %s", url, str(e))
+        return []
+
+
 if __name__ == '__main__':
     logger.info("开始任务调度")
     url_list = []
@@ -135,26 +148,22 @@ if __name__ == '__main__':
             url_list.append(line)
     print(url_list)
     # url_list = ['https://www.tmall.com']
-    for url in url_list:
-        try:
-            html = get_html(url)
-            resources = match_resource(html)
-            resources = url_fill(url, resources)
-            print(url, resources)
-            resource_list = create_resource_data(url, resources)
-            save_list += resource_list
-        except Exception as e:
-            print(url, "遇到错误" + str(e))
+    save_list = []
+    executor = ProcessPoolExecutor(max_workers=30)
+    all_task = [executor.submit(parse, url) for url in url_list]
+    for future in as_completed(all_task):
+        data = future.result()
+        save_list = save_list + data
     logger.info("资源解析完毕")
-    delete_resource_from_DB()
     time.sleep(5)
+    delete_resource_from_DB()
+    time.sleep(3)
     save_resource_data(save_list)
     time.sleep(2)
     cmd = "rm  /media/zyan/文档/毕业设计/code/aleaxtop50/*"
     os.system(cmd)
     r_list = read_resource_data()
     logger.info("开始下载资源")
-    executor = ProcessPoolExecutor(max_workers=30)
     try:
         for i in range(len(r_list)):
             executor.submit(download_resource_single, r_list[i], i)
