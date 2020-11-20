@@ -41,5 +41,15 @@ if __name__ == '__main__':
     #     os.system(cmd)
     #     logger.info("第%s轮次终止了收集", item)
     #     time.sleep(2)
-    for i in range(10):
-        print(random.randint(1, 10))
+    # for i in range(10):
+    #     print(random.randint(1, 10))
+    import pandas as pd
+    a = [
+        [1,2,3,4,5,6],
+        [3,6,9,5,2,]
+    ]
+    data = pd.DataFrame(data=a)
+    data.to_csv("./b.csv", index=False, header=False)
+    for i in a:
+        print(i)
+        print(str(i)[1:-1])

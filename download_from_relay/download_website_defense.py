@@ -183,12 +183,11 @@ def get_defense_traffic(host):
     tmp1 = list(origin_set)
     tmp2 = list(relay_resource_set)
     last_list = tmp1 + tmp2
-    executor = ProcessPoolExecutor(max_workers=10)
     # for item in origin_set:
     #     future = executor.submit(get_resource, item, host)
     # for item in relay_resource_set:
     #     future = executor.submit(get_resource, item, host)
-
+    random.shuffle(last_list)
     all_task = [executor.submit(get_resource, url, host) for url in last_list]
     for future in as_completed(all_task):
         data = future.result()
@@ -236,7 +235,7 @@ if __name__ == '__main__':
     print(url_list)
     f.close()
     mkdir_save(filepath)
-    executor = ProcessPoolExecutor(max_workers=10)
+    executor = ProcessPoolExecutor(max_workers=30)
 
     for i in range(round_start, round_end):
         logger.info("开始第%s轮次捕获", i + 1)
@@ -252,3 +251,4 @@ if __name__ == '__main__':
             time.sleep(2)
         time.sleep(3)
         logger.info("结束第%s轮次捕获", i + 1)
+    executor.shutdown()
