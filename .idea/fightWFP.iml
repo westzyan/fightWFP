@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/download_from_relay" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/attack" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/attack/cumul" isTestSource="false" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.6 (pygpu)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

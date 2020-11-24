@@ -2,8 +2,9 @@
 import requests
 import urllib3
 import logging
+import random
+import time
 from requests.adapters import HTTPAdapter
-from resource_scheduling import read_resource_data
 urllib3.disable_warnings()
 s = requests.session()
 s.keep_alive = False
@@ -41,6 +42,14 @@ def download_file(url, filename=None, filepath=None):
 
 
 def get_resource(url, host=None):
+    i = random.randint(0, 10)
+    if i > 8:
+        sleep_seconds = random.randint(0, 20) / 5
+    elif i > 2:
+        sleep_seconds = random.randint(5, 10) / 10
+    else:
+        sleep_seconds = random.randint(0, 5) / 10
+    time.sleep(sleep_seconds)
     try:
         logger.info("host:%s,正在请求资源：%s", host, url)
         requests.get(url, headers=headers, proxies=proxies, verify=False, timeout=8)
@@ -49,11 +58,3 @@ def get_resource(url, host=None):
         logger.error("请求资源失败：%s, error:%s", url, str(e))
         return 1
 
-
-if __name__ == '__main__':
-    import time
-
-    time1 = time.time()
-    download_file("https://youtube.com", filepath="/home/zyan/test")
-    time2 = time.time()
-    print("共用时：", time2 - time1)

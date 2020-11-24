@@ -5,6 +5,8 @@ import logging
 import random
 import copy
 import time
+import configparser
+import os
 from get_resource_location_pool import get_resource_from_DB, get_resource_from_DB_by_website
 from download_util import get_resource
 from download_util import headers, proxies
@@ -18,6 +20,16 @@ logger = logging.getLogger(__name__)
 start_white_list = ["android-app:", "ios-app", "https://accounts.google.com/ServiceLogin?", "https:&#x2F;",
                     "//creativecommons", "https://chrome.google.com/webstore", "'+m[0].params.src+'", "'+r"]
 end_white_list = ["/", ".com", ".mp4", ".mp3", ".net", ".org", ".cn", ".us", "p=iframe-alerts", ".ms", "/en-us"]
+
+root_dir = os.path.dirname(os.path.abspath('.'))  # 获取当前文件所在目录的上一级目录，即项目所在目录E:\Crawler
+configpath = os.path.join(root_dir, "config.ini")
+cf = configparser.ConfigParser()
+cf.read(configpath)  # 读取配置文件
+
+eth_name = cf.get("eth", "name")
+filepath = cf.get("eth", "path")
+round_start = int(cf.get("eth", "start"))
+round_end = int(cf.get("eth", "end"))
 
 
 def get_origin_website_html(url):
@@ -175,42 +187,21 @@ def get_defense_traffic(host):
     # 初步解析里面的资源
     resources = parse_web_resource(html)
     logger.info("解析了所有资源")
-    # for item in resources:
-    #     print(item)
-    # print("-------------------------------------")
     # 去除非法资源，分类不同下载渠道的资源，并填充对应的url,使得可以直接下载
     origin_set, relay_resource_set = search_resource_in_relay2(host, resources)
     tmp1 = list(origin_set)
     tmp2 = list(relay_resource_set)
     last_list = tmp1 + tmp2
-    # for item in origin_set:
-    #     future = executor.submit(get_resource, item, host)
-    # for item in relay_resource_set:
-    #     future = executor.submit(get_resource, item, host)
     random.shuffle(last_list)
     all_task = [executor.submit(get_resource, url, host) for url in last_list]
     for future in as_completed(all_task):
         data = future.result()
 
 
-import configparser
-import os
-
-root_dir = os.path.dirname(os.path.abspath('.'))  # 获取当前文件所在目录的上一级目录，即项目所在目录E:\Crawler
-configpath = os.path.join(root_dir, "config.ini")
-cf = configparser.ConfigParser()
-cf.read(configpath)  # 读取配置文件
-
-eth_name = cf.get("eth", "name")
-filepath = cf.get("eth", "path")
-round_start = int(cf.get("eth", "start"))
-round_end = int(cf.get("eth", "end"))
-
-
 def simulation_collect(url, round_number):
     # 模拟收集流量，并保存
     cmd = "tcpdump -i " + eth_name + " -w " + filepath + "round" + str(round_number) + "/" + url.split("/")[
-        -1] + ".pcap"
+        -1] + ".pcap &"
     logger.info(cmd)
     os.system(cmd)
 
@@ -236,14 +227,15 @@ if __name__ == '__main__':
     f.close()
     mkdir_save(filepath)
     executor = ProcessPoolExecutor(max_workers=30)
-
+    error_list = []
     for i in range(round_start, round_end):
         logger.info("开始第%s轮次捕获", i + 1)
         for item in url_list:
-            executor.submit(simulation_collect, item, i)
+            simulation_collect(item, i)
             try:
                 get_defense_traffic(item)
             except Exception as e:
+                error_list.append(str(i) + " " + item)
                 logger.error("%s 遇到错误：%s", item, str(e))
             time.sleep(15)
             cmd = "ps -ef | grep 'tcpdump -i' | grep -v grep | awk '{print $2}' | xargs kill -9"
@@ -252,3 +244,5 @@ if __name__ == '__main__':
         time.sleep(3)
         logger.info("结束第%s轮次捕获", i + 1)
     executor.shutdown()
+    for item in error_list:
+        print(item)

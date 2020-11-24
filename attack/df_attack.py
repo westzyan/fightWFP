@@ -8,17 +8,21 @@ from keras.utils import np_utils
 from keras.optimizers import Adamax
 import numpy as np
 import os
-
+import tensorflow as tf
+import keras
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+keras.backend.tensorflow_backend.set_session(tf.Session(config=config))
 # Load data for non-defended dataset for CW setting
 def LoadDataNoDefCW():
     print("Loading defended dataset for closed-world scenario")
     # Point to the directory storing data
     # dataset_dir = '../dataset/ClosedWorld/NoDef/'
     # dataset_dir = "/media/zyan/软件/张岩备份/PPT/DeepFingerprinting/df-master/dataset/ClosedWorld/NoDef/"
-    dataset_dir = "/media/zyan/文档/毕业设计/code/dataset/"
+    dataset_dir = "/media/zyan/文档/毕业设计/code/dataset/round2/"
     # X represents a sequence of traffic directions
     # y represents a sequence of corresponding label (website's label)
-    data = np.loadtxt(dataset_dir + "df_tcp_3573.csv", delimiter=",")
+    data = np.loadtxt(dataset_dir + "df_tcp_10000_round2.csv", delimiter=",")
     print(data)
     np.random.shuffle(data)
     print(data)
@@ -54,8 +58,8 @@ if __name__ == '__main__':
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
     # Use only CPU
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    # os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+    # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
     description = "Training and evaluating DF model for closed-world scenario on non-defended dataset"
 
@@ -112,7 +116,7 @@ if __name__ == '__main__':
                         batch_size=BATCH_SIZE, epochs=NB_EPOCH,
                         verbose=VERBOSE, validation_data=(X_valid, y_valid))
 
-    model.save('my_model_undef.h5')
+    model.save('my_model_undef_tcp_10000_round2.h5')
 
     # Start evaluating model with testing data
     score_test = model.evaluate(X_test, y_test, verbose=VERBOSE)

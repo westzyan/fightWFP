@@ -4,6 +4,7 @@ import os
 import logging
 import csv
 import pandas as pd
+import random
 from concurrent.futures import ProcessPoolExecutor, as_completed
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -126,29 +127,33 @@ def extract_trace_files(dir):
     output_filepath = save_ttdl_filepath
     files = os.listdir(input_filepath + "/" + dir)
     for file in files:
-        full_file = save_filepath + dir + "/" + file
-        logger.info("开始读取文件:%s", full_file)
-        with open(full_file, 'r') as f:
-            reader = csv.reader(f)
-            rows = list(reader)
-        f.close()
-        standard_time = rows[0][-2]
-        new_rows = []
-        for row in rows:
-            src_ip = row[0]
-            timestamp = float(row[4]) - float(standard_time)
-            len = row[5]
-            if src_ip.startswith(local_ip_start[0]) or src_ip.startswith(local_ip_start[1]):
-                new_rows.append(str(timestamp) + ",+" + str(len))
-            else:
-                new_rows.append(str(timestamp) + ",-" + str(len))
-        full_save_file = output_filepath + dir + "/" + file
-        logger.info("开始写入文件:%s", full_save_file)
-        with open(full_save_file, 'w') as f:
-            for row in new_rows:
-                f.write(row + "\n")
-        f.close()
-        logger.info("写入文件完毕:%s", full_save_file)
+        try:
+            full_file = save_filepath + dir + "/" + file
+            logger.info("开始读取文件:%s", full_file)
+            with open(full_file, 'r') as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+            f.close()
+            standard_time = rows[0][-2]
+            new_rows = []
+            for row in rows:
+                src_ip = row[0]
+                timestamp = float(row[4]) - float(standard_time)
+                len = row[5]
+                if src_ip.startswith(local_ip_start[0]) or src_ip.startswith(local_ip_start[1]):
+                    new_rows.append(str(timestamp) + ",+" + str(len))
+                else:
+                    new_rows.append(str(timestamp) + ",-" + str(len))
+            full_save_file = output_filepath + dir + "/" + file
+            logger.info("开始写入文件:%s", full_save_file)
+            with open(full_save_file, 'w') as f:
+                for row in new_rows:
+                    f.write(row + "\n")
+            f.close()
+
+            logger.info("写入文件完毕:%s", full_save_file)
+        except Exception as e:
+            logger.error("文件失败：%s", file)
 
 def extract_trace():
     '''
@@ -192,12 +197,44 @@ def extract_feature_single_dir(dir):
         logger.info("file %s, len: %s", full_file,len(last_list))
     return last_list
 
+def extract_feature_single_dir_simulator(dir):
+    last_list = []
+    input_filepath = save_ttdl_filepath
+    files = os.listdir(input_filepath + "/" + dir)
+    for file in files:
+        last_single_list = [0] * 5000
+        origin_single_list = []
+        full_file = input_filepath + dir + "/" + file
+        # logger.info("开始读取文件:%s", full_file)
+        with open(full_file, 'r') as f:
+            reader = csv.reader(f)
+            rows = list(reader)
+        f.close()
+        random.shuffle(rows)
+        for row in rows:
+            if row[1][0] == "+":
+                origin_single_list.append(1)
+            else:
+                origin_single_list.append(-1)
+        origin_length = 0
+        if len(origin_single_list) < 5000:
+            origin_length = len(origin_single_list)
+        else:
+            origin_length = 5000
+        for i in range(origin_length):
+            last_single_list[i] = origin_single_list[i]
+        last_single_list.append(int(dir))
+        last_list.append(last_single_list)
+    logger.info("file %s, len: %s", input_filepath + "/" + dir,len(last_list))
+    return last_list
+
+
 def extract_feature():
     executor = ProcessPoolExecutor(max_workers=30)
     input_filepath = save_ttdl_filepath
     dirs = os.listdir(input_filepath)
     logger.info("dirs: %s", dirs)
-    all_task = [executor.submit(extract_feature_single_dir, dir) for dir in dirs]
+    all_task = [executor.submit(extract_feature_single_dir_simulator, dir) for dir in dirs]
     last_list = []
     for future in as_completed(all_task):
         single_list = future.result()
@@ -205,9 +242,53 @@ def extract_feature():
     print(len(last_list))
     executor.shutdown()
     data = pd.DataFrame(data=last_list)
-    data.to_csv("/media/zyan/文档/毕业设计/code/dataset/df_tcp_3573.csv", index=False, header=False)
+    data.to_csv("/media/zyan/文档/毕业设计/code/dataset/round2/df_tcp_10000_round2.csv", index=False, header=False)
+
+
+# a = {'adobe.com': 0, 'aliexpress.com': 0, 'amazon.com': 0, 'apple.com': 0, 'baidu.com': 0, 'bing.com': 0, 'breitbart.com': 0, 'chaturbate.com': 0, 'cnn.com': 0, 'craigslist.org': 0, 'csdn.net': 0, 'dropbox.com': 0, 'ebay.com': 0, 'espn.com': 0, 'etsy.com': 0, 'foxnews.com': 0, 'hulu.com': 0, 'imdb.com': 0, 'indeed.com': 0, 'instagram.com': 0, 'jd.com': 0, 'live.com': 0, 'livejasmin.com': 0, 'microsoft.com': 0, 'naver.com': 0, 'netflix.com': 0, 'nytimes.com': 0, 'office.com': 0, 'okezone.com': 0, 'okta.com': 0, 'qq.com': 0, 'reddit.com': 0, 'salesforce.com': 0, 'sina.com.cn': 0, 'sohu.com': 0, 'stackoverflow.com': 0, 'tribunnews.com': 0, 'twitch.tv': 0, 'twitter.com': 0, 'vk.com': 0, 'walmart.com': 0, 'washingtonpost.com': 0, 'wellsfargo.com': 0, 'wikipedia.org': 0, 'www.alipay.com': 0, 'yahoo.com': 0, 'yandex.ru': 0, 'youtube.com': 0, 'zhanqi.tv': 0, 'zillow.com': 0}
+# save_trace_locations(a)
+
+
+def extract_trace_files_test(dir):
+    '''
+    将parse_trace一个目录下的csv文件，提取对应的特征信息，包含时间【从0开始】，方向，大小
+    :param files:
+    :return:
+    '''
+    input_filepath = save_filepath
+    output_filepath = save_ttdl_filepath
+    files = os.listdir(input_filepath + "/" + dir)
+    for file in files:
+        full_file = save_filepath + dir + "/" + file
+        logger.info("开始读取文件:%s", full_file)
+        with open(full_file, 'r') as f:
+            reader = csv.reader(f)
+            rows = list(reader)
+        f.close()
+        standard_time = rows[0][-2]
+        new_rows = []
+        for row in rows:
+            src_ip = row[0]
+            timestamp = float(row[4]) - float(standard_time)
+            len = row[5]
+            if src_ip.startswith(local_ip_start[0]) or src_ip.startswith(local_ip_start[1]):
+                new_rows.append(str(timestamp) + ",+" + str(len))
+            else:
+                new_rows.append(str(timestamp) + ",-" + str(len))
+        full_save_file = output_filepath + dir + "/" + file
+        logger.info("开始写入文件:%s", full_save_file)
+        with open(full_save_file, 'w') as f:
+            for row in new_rows:
+                f.write(row + "\n")
+        f.close()
+
+        logger.info("写入文件完毕:%s", full_save_file)
+
 
 
 if __name__ == '__main__':
-    parse_trace()
+    # parse_trace()
+    # extract_trace()
+    extract_feature()
+
 
