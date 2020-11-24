@@ -7,9 +7,9 @@ import time
 from requests.adapters import HTTPAdapter
 urllib3.disable_warnings()
 s = requests.session()
-s.keep_alive = False
-s.mount('http://', HTTPAdapter(max_retries=3))
-s.mount('https://', HTTPAdapter(max_retries=3))
+s.keep_alive = True
+s.mount('http://', HTTPAdapter(max_retries=1))
+s.mount('https://', HTTPAdapter(max_retries=1))
 
 proxies = {
     'http': 'socks5h://127.0.0.1:9150',
@@ -43,7 +43,7 @@ def download_file(url, filename=None, filepath=None):
 
 def get_resource(url, host=None):
     i = random.randint(0, 10)
-    if i > 8:
+    if i > 7:
         sleep_seconds = random.randint(0, 20) / 5
     elif i > 2:
         sleep_seconds = random.randint(5, 10) / 10

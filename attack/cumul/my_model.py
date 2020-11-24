@@ -39,6 +39,7 @@ dic = np.load("./results/round2.npy", allow_pickle=True).item()
 X = np.array(dic['feature'])
 y = np.array(dic['label'])
 
+
 # normalize the data
 scaler = preprocessing.MinMaxScaler((-1, 1))
 X = scaler.fit_transform(X)

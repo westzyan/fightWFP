@@ -108,7 +108,7 @@ def parse_trace():
         list.sort(files)
         for file in files:
             full_file = full_dir + "/" + file
-            logger.info("parse fullfile: %s", full_file)
+            logger.info("parse file: %s", full_file)
             web_num = web_num_dict.get(file[:-5])
             trace_num = trace_location_dict.get(file[:-5])
             cmd = 'tshark  -r ' + full_file + '  -T fields -Y "tcp.port==' + remote_port + ' " -E separator=, -e ip.src -e tcp.srcport -e ip.dst -e tcp.dstport  -e frame.time_epoch -e frame.len > ' + save_filepath + str(web_num) + '/' + str(trace_num) + '.csv'
@@ -117,12 +117,44 @@ def parse_trace():
             logger.info(cmd)
     save_trace_locations(trace_location_dict)
 
+
+def parse_trace_single_dir(dir):
+    filepath = origin_filepath
+    full_dir = filepath + dir
+    files = os.listdir(full_dir)
+    for file in files:
+        full_file = full_dir + "/" + file
+        logger.info("parse file: %s", full_file)
+        web_num = web_num_dict.get(file[:-5])
+        trace_num = dir[5:]
+        cmd = 'tshark  -r ' + full_file + '  -T fields -Y "tcp.port==' + remote_port + ' " -E separator=, -e ip.src -e tcp.srcport -e ip.dst -e tcp.dstport  -e frame.time_epoch -e frame.len > ' + save_filepath + str(
+            web_num) + '/' + str(trace_num) + '.csv'
+        os.system(cmd)
+        logger.info(cmd)
+
+
+def parse_trace_mul_thread():
+    '''
+    将原始pcap文件转换为csv文件，csv文件内容为源IP，源端口，目的IP，目的端口，时间戳，长度
+    trace_location_dict记录每个网站下次要保存的文件的number，由于记录number，暂时单线程
+    :return:
+    '''
+    filepath = origin_filepath
+    dirs = os.listdir(filepath)
+    executor = ProcessPoolExecutor(max_workers=30)
+    for dir in dirs:
+        executor.submit(parse_trace_single_dir, dir)
+    executor.shutdown()
+
+
+
 def extract_trace_files(dir):
     '''
     将parse_trace一个目录下的csv文件，提取对应的特征信息，包含时间【从0开始】，方向，大小
     :param files:
     :return:
     '''
+    remote_port_list = ["60868", "60858"]
     input_filepath = save_filepath
     output_filepath = save_ttdl_filepath
     files = os.listdir(input_filepath + "/" + dir)
@@ -137,10 +169,10 @@ def extract_trace_files(dir):
             standard_time = rows[0][-2]
             new_rows = []
             for row in rows:
-                src_ip = row[0]
+                src_port = row[1]
                 timestamp = float(row[4]) - float(standard_time)
                 len = row[5]
-                if src_ip.startswith(local_ip_start[0]) or src_ip.startswith(local_ip_start[1]):
+                if src_port not in remote_port_list :
                     new_rows.append(str(timestamp) + ",+" + str(len))
                 else:
                     new_rows.append(str(timestamp) + ",-" + str(len))
@@ -287,8 +319,8 @@ def extract_trace_files_test(dir):
 
 
 if __name__ == '__main__':
-    # parse_trace()
+    parse_trace_mul_thread()
     # extract_trace()
-    extract_feature()
+    # extract_feature()
 
 

@@ -156,6 +156,7 @@ if __name__ == '__main__':
         save_list = save_list + data
     logger.info("资源解析完毕")
     time.sleep(5)
+
     delete_resource_from_DB()
     time.sleep(3)
     save_resource_data(save_list)

@@ -66,7 +66,7 @@ def feature_extraction():
 
 
 def load_data():
-    filepath = './my_knn_5000.csv'
+    filepath = '/media/zyan/文档/毕业设计/code/dataset/round2/my_knn_5000.csv'
     data = np.loadtxt(filepath, delimiter=",")
     X = data[:, :-1]
     y = data[:, -1]
@@ -82,7 +82,7 @@ def attack():
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=2003)
 
     # 定义了一个KNN object，它带有一个参数叫做n_neighbors=3， 意思就是说我们选择的K值是3.
-    clf = KNeighborsClassifier(n_neighbors=50)
+    clf = KNeighborsClassifier(n_neighbors=1)
     clf.fit(X_train, y_train)
 
     # 做预测以及计算准确率,计算准确率的逻辑也很简单，就是判断预测和实际值有多少是相等的。如果相等则算预测正确，否则预测失败。
@@ -92,4 +92,5 @@ def attack():
 
 if __name__ == '__main__':
     # feature_extraction()
-    feature_transform()
+    # feature_transform()
+    attack()
