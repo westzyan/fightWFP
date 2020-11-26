@@ -30,8 +30,8 @@ def feature_transform_single_dir(dir, filepath, output_path):
 
 
 def feature_transform():
-    filepath = "/media/zyan/文档/毕业设计/code/dataset/round2/tcp_time_direction_len/"
-    output_path = "/media/zyan/文档/毕业设计/code/dataset/round2/my_knn_data/"
+    filepath = "/media/zyan/文档/毕业设计/code/dataset/round3/tcp_time_direction_len/"
+    output_path = "/media/zyan/文档/毕业设计/code/dataset/round3/my_knn_data/"
     dirs = os.listdir(filepath)
     executor = ProcessPoolExecutor(max_workers=30)
     for dir in dirs:
@@ -40,7 +40,7 @@ def feature_transform():
 
 
 def feature_extraction():
-    filepath = "/media/zyan/文档/毕业设计/code/dataset/my_knn_output/my_knn_data/"
+    filepath = "/media/zyan/文档/毕业设计/code/dataset/round3/my_knn_data/"
     files = os.listdir(filepath)
     feature_label_list = []
     for file in files:
@@ -54,9 +54,8 @@ def feature_extraction():
             f.close()
             feature_label.append(label)
             feature_label_list.append(feature_label)
-    with open('my_knn_5000.csv', 'w') as f:
+    with open('/media/zyan/文档/毕业设计/code/dataset/round3/my_knn_10000.csv', 'w') as f:
         for features in feature_label_list:
-            print(features)
             for i in range(len(features) - 1):
                 f.write(features[i])
                 f.write(',')
@@ -66,7 +65,7 @@ def feature_extraction():
 
 
 def load_data():
-    filepath = '/media/zyan/文档/毕业设计/code/dataset/round2/my_knn_5000.csv'
+    filepath = '/media/zyan/文档/毕业设计/code/dataset/round3/my_knn_10000.csv'
     data = np.loadtxt(filepath, delimiter=",")
     X = data[:, :-1]
     y = data[:, -1]

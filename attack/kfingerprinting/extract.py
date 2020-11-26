@@ -428,7 +428,7 @@ if __name__== '__main__':
     # args = parser.parse_args()
 
     data_dict = {'feature':[],'label':[]}
-    filepath = "/media/zyan/文档/毕业设计/code/dataset/round2/my_knn_data/"
+    filepath = "/media/zyan/文档/毕业设计/code/dataset/round3/my_knn_data/"
     fpath = os.path.join(filepath, '*/*')
     flist = glob.glob(fpath)
     if len(flist) == 0:
