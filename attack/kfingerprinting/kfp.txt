@@ -1,0 +1,3 @@
+1. 修改conf.ini配置文件，修改const.py配置文件
+2. 修改extract.py路径位置，运行extract.py 直接运行
+3. 执行my_main.py，python my_main.py /media/zyan/文档/毕业设计/code/dataset/round4/kfp/my_knn_data.npy
