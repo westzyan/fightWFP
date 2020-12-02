@@ -1,0 +1,4 @@
+1. 使用knn_attack.py的feature_transform() 做特征的转换，修改函数文件路径，需要创建my_knn_data文件夹
+2. 修改options-kNN.txt，使用/home/zyan/anaconda3/envs/py27/bin/python2.7 fextractor.py ./options-kNN.txt my_knn_data/
+3. 使用knn_attack.feature_extraction(), 提取特征
+4. 使用knn_attack.attack()，攻击验证

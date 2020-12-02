@@ -1,0 +1,3 @@
+1. 修改conf.ini,修改constants.py,创建CUMUL文件夹
+2. python3 extract.py  /media/zyan/文档/毕业设计/code/dataset/round9/my_knn_data/
+3. 修改my_model.py内容，运行my_model.py
