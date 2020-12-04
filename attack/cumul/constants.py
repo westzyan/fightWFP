@@ -2,7 +2,7 @@ from os.path import join, abspath, dirname, pardir
 
 # Directories
 BASE_DIR = abspath(join(dirname(__file__), pardir))
-outputdir = join(BASE_DIR, 'cumul/results/')
+outputdir = join(BASE_DIR, '/media/zyan/文档/毕业设计/code/dataset/round1/cumul/')
 randomdir = join(BASE_DIR, 'cumul/randomresults/')
 logdir = join(BASE_DIR,'cumul/')
 # Files

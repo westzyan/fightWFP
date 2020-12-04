@@ -12,12 +12,16 @@
 #         os.system(cmd)
 # f.close()
 
-import os
-url_list = []
-filepath = "/media/zyan/新加卷/trace_workstation2/origin_data9"
-files = os.listdir(filepath)
-print(files)
-for file in files:
-    cmd = "mv " + filepath + "/" + file + " " + filepath + "/" + file[:-7] + ".pcap"
-    print(cmd)
-    os.system(cmd)
+# import os
+# url_list = []
+# filepath = "/media/zyan/新加卷/trace_workstation2/origin_data9"
+# files = os.listdir(filepath)
+# print(files)
+# for file in files:
+#     cmd = "mv " + filepath + "/" + file + " " + filepath + "/" + file[:-7] + ".pcap"
+#     print(cmd)
+#     os.system(cmd)
+
+a = 11 * 0.2
+b= 2
+print(int(a))

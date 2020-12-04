@@ -4,7 +4,7 @@ import time
 import urllib3
 import logging
 import os
-from resource_scheduling import create_resource_data, save_resource_data, delete_resource_from_DB, read_resource_data
+from DB_utils import create_resource_data, save_resource_data, delete_resource_from_DB, read_resource_data
 from concurrent.futures import ProcessPoolExecutor, as_completed
 urllib3.disable_warnings()
 
@@ -43,7 +43,8 @@ def match_resource(html):
     # 目前只匹配 javascript 以及 css 资源，后期可能有[xml, html, jpg, jpeg, gif, png, svg, htm]
     js_set = set()
     css_set = set()
-
+    other_set = set()
+    other_suffix = ['xml', 'html', 'jpg', 'jpeg', 'gif', 'png', 'svg', 'htm', 'ico', 'json']
     patterns = [r"<link.*?href=\"(.*?)\"", r"src=\"(.*?)\""]
     for pattern in patterns:
         matchs = re.findall(pattern, html)
@@ -52,10 +53,14 @@ def match_resource(html):
             for match in matchs:
                 if '.js' in match and '.json' not in match:
                     js_set.add(str(match))
-                if '.css' in match:
+                elif '.css' in match:
                     css_set.add(match)
-    logger.info("js_set: %s", js_set)
-    resources_list = [js_set, css_set]
+                else:
+                    for suffix in other_suffix:
+                        if match.endswith(suffix):
+                            other_set.add(match)
+                            break
+    resources_list = [js_set, css_set, other_set]
     return resources_list
 
 
@@ -63,8 +68,10 @@ def url_fill(url, resources):
     # 填充非域名开头的资源连接，便于下载
     js_set = resources[0]
     css_set = resources[1]
+    other_set = resources[2]
     new_js_set = set()
     new_css_set = set()
+    new_other_set = set()
     for item in js_set:
         if not item.startswith("http"):
             # 存在缺陷
@@ -90,7 +97,19 @@ def url_fill(url, resources):
                 new_css_set.add(url + item)
         else:
             new_css_set.add(item)
-    full_resources_list = [new_js_set, new_css_set]
+    for item in other_set:
+        if not item.startswith("http"):
+            if item.startswith("//"):
+                new_other_set.add("https:" + item)
+            elif item.startswith("./"):
+                new_other_set.add(url + item[1:])
+            elif not item.startswith("/"):
+                new_other_set.add(url + "/" + item)
+            else:
+                new_other_set.add(url + item)
+        else:
+            new_other_set.add(item)
+    full_resources_list = [new_js_set, new_css_set, new_other_set]
     return full_resources_list
 
 
@@ -110,18 +129,10 @@ def download_file(url, filename=None, filepath=None):
     file.close()
 
 
-def download_resource(resources_list):
-    count = 0
-    for item in resources_list:
-        count += 1
-        print("正在下载第", count)
-        download_file(item[2], item[3], "../aleaxtop50/")
-        print(item[2] + "下载完毕")
-
 
 def download_resource_single(resource, i):
     logger.info("正在下载第%s个:%s", i, resource[2])
-    download_file(resource[2], resource[3], "/media/zyan/文档/毕业设计/code/aleaxtop50/")
+    download_file(resource[2], resource[3], "/media/zyan/文档/毕业设计/code/aleaxtop50param/")
     logger.info("%s下载完毕", resource[2] )
 
 
@@ -147,7 +158,6 @@ if __name__ == '__main__':
             line = line.strip('\n')  # 去掉列表中每一个元素的换行符
             url_list.append(line)
     print(url_list)
-    # url_list = ['https://www.tmall.com']
     save_list = []
     executor = ProcessPoolExecutor(max_workers=30)
     all_task = [executor.submit(parse, url) for url in url_list]
@@ -156,12 +166,11 @@ if __name__ == '__main__':
         save_list = save_list + data
     logger.info("资源解析完毕")
     time.sleep(5)
-
     delete_resource_from_DB()
     time.sleep(3)
     save_resource_data(save_list)
     time.sleep(2)
-    cmd = "rm  /media/zyan/文档/毕业设计/code/aleaxtop50/*"
+    cmd = "rm  /media/zyan/文档/毕业设计/code/aleaxtop50param/*"
     os.system(cmd)
     r_list = read_resource_data()
     logger.info("开始下载资源")

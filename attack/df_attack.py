@@ -19,10 +19,10 @@ def LoadDataNoDefCW():
     # Point to the directory storing data
     # dataset_dir = '../dataset/ClosedWorld/NoDef/'
     # dataset_dir = "/media/zyan/软件/张岩备份/PPT/DeepFingerprinting/df-master/dataset/ClosedWorld/NoDef/"
-    dataset_dir = "/media/zyan/文档/毕业设计/code/dataset/round2/"
+    dataset_dir = "/media/zyan/文档/毕业设计/code/dataset/round13/"
     # X represents a sequence of traffic directions
     # y represents a sequence of corresponding label (website's label)
-    data = np.loadtxt(dataset_dir + "df_tcp_10000_round2.csv", delimiter=",")
+    data = np.loadtxt(dataset_dir + "df_tcp_5000.csv", delimiter=",")
     print(data)
     np.random.shuffle(data)
     print(data)
@@ -116,7 +116,7 @@ if __name__ == '__main__':
                         batch_size=BATCH_SIZE, epochs=NB_EPOCH,
                         verbose=VERBOSE, validation_data=(X_valid, y_valid))
 
-    model.save('my_model_undef_tcp_10000_round2.h5')
+    # model.save('my_model_undef_tcp_10000_round2.h5')
 
     # Start evaluating model with testing data
     score_test = model.evaluate(X_test, y_test, verbose=VERBOSE)

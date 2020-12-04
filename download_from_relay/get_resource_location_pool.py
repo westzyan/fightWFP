@@ -3,7 +3,7 @@ import threading
 import pymysql
 import configparser
 import os
-from DBUtils.PooledDB import PooledDB, SharedDBConnection
+from DBUtils.PooledDB import PooledDB
 from random import choice
 
 from ServerResource import ServerResource
@@ -141,20 +141,8 @@ def get_random_ip(locations):
 
 
 if __name__ == '__main__':
-    # resource = get_resource_from_DB("zhang", like=False)
-    # print(resource)
-    # if resource != 0:
-    #     print(resource.locations)
-    #     print(get_random_ip(resource.locations))
-    # DB_set = get_resource_from_DB_by_website("https://youtube.com")
-    # DB_dict = {}
-    # for item in DB_set:
-    #     print(item)
-    #     DB_dict[str(item[2])] = [item[3], item[4]]
-    # print(DB_dict)
     import configparser
     import os
-
     root_dir = os.path.dirname(os.path.abspath('.'))  # 获取当前文件所在目录的上一级目录，即项目所在目录E:\Crawler
     configpath = os.path.join(root_dir, "config.ini")
     cf = configparser.ConfigParser()

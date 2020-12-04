@@ -150,9 +150,9 @@ def fill_all_resource(host, resource_list):
     return origin_set
 
 
-def simulation_collect(url, round_number):
+def simulation_collect(url):
     # 模拟收集流量，并保存
-    cmd = "tcpdump -i " + eth_name + " -w " + filepath + "round" + str(round_number) + "/" + url.split("/")[
+    cmd = "tcpdump -i " + eth_name + " -w " + filepath + "round0"  + "/" + url.split("/")[
         -1] + ".pcap &"
     logger.info(cmd)
     os.system(cmd)
@@ -171,44 +171,41 @@ def mkdir_save(filepath):
 
 if __name__ == '__main__':
     url_list = []
-    with open("../aleax_top.txt", "r") as f:
+    with open("../top10000.csv", "r") as f:
         for line in f.readlines():
             line = line.strip('\n')  # 去掉列表中每一个元素的换行符
-            url_list.append(line)
+            url_list.append("https://www." + line.split(',')[-1])
     print(url_list)
     f.close()
     mkdir_save(filepath)
     executor = ProcessPoolExecutor(max_workers=40)
     error_list = []
-    for i in range(round_start, round_end):
-        logger.info("开始第%s轮次捕获", i + 1)
-        for item in url_list:
-            simulation_collect(item, i)
-            try:
-                host = item
-                # 获取原始HTML文本
-                logger.info("%s start:", host)
-                html = get_origin_website_html(host)
-                logger.info("获取到原始HTML")
-                # 初步解析里面的资源
-                resources = parse_web_resource(html)
-                logger.info("解析了所有资源")
-                # 去除非法资源，分类不同下载渠道的资源，并填充对应的url,使得可以直接下载
-                origin_set = fill_all_resource(host, resources)
-                last_list = list(origin_set)
-                random.shuffle(last_list)
-                all_task = [executor.submit(get_resource, url, host) for url in last_list]
-                for future in as_completed(all_task):
-                    data = future.result()
-            except Exception as e:
-                error_list.append(str(i) + " " + item)
-                logger.error("%s 遇到错误：%s", item, str(e))
-            cmd = "ps -ef | grep 'tcpdump -i' | grep -v grep | awk '{print $2}' | xargs kill -9"
-            logger.info("%s 抓取完毕", item)
-            os.system(cmd)
-            time.sleep(2)
-        time.sleep(3)
-        logger.info("结束第%s轮次捕获", i + 1)
+    for item in url_list:
+        simulation_collect(item)
+        try:
+            host = item
+            # 获取原始HTML文本
+            logger.info("%s start:", host)
+            html = get_origin_website_html(host)
+            logger.info("获取到原始HTML")
+            # 初步解析里面的资源
+            resources = parse_web_resource(html)
+            logger.info("解析了所有资源")
+            # 去除非法资源，分类不同下载渠道的资源，并填充对应的url,使得可以直接下载
+            origin_set = fill_all_resource(host, resources)
+            last_list = list(origin_set)
+            random.shuffle(last_list)
+            all_task = [executor.submit(get_resource, url, host) for url in last_list]
+            for future in as_completed(all_task):
+                data = future.result()
+        except Exception as e:
+            error_list.append(item)
+            logger.error("%s 遇到错误：%s", item, str(e))
+        cmd = "ps -ef | grep 'tcpdump -i' | grep -v grep | awk '{print $2}' | xargs kill -9"
+        logger.info("%s 抓取完毕", item)
+        os.system(cmd)
+        time.sleep(2)
+    time.sleep(3)
     executor.shutdown()
     for item in error_list:
         print(item)

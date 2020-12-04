@@ -55,47 +55,6 @@ def parse_web_resource(html):
     return resource_list
 
 
-def search_resource_in_relay(host, resource_list):
-    """
-    输入域名和解析到的资源列表，然后去数据库查找对应的修改后的文件地址，分离正常文件和修改后的文件
-    :param host:
-    :param resource_list:
-    :return:
-    """
-    relay_resource_set = set()
-    normal_set = set(copy.deepcopy(resource_list))
-    origin_set = set()
-    remove_flag = False
-    for resource in resource_list:
-        if resource == "":
-            normal_set.remove("")
-            continue
-        result = get_resource_from_DB(resource, False)
-        if result != 0:
-            # 找到修改后资源所在位置，并放到set里面
-            tmp1 = str(result.locations)[1:-1]
-            tmp2 = tmp1.split(",")
-            ip = random.choice(tmp2)
-            relay_resource_set.add("http://" + ip + "/" + result.resource)
-        else:
-            # 先去除非正常资源
-            remove_flag = False
-            for start_item in start_white_list:
-                if resource.startswith(start_item):
-                    remove_flag = True
-                    break
-            for end_item in end_white_list:
-                if resource.endswith(end_item):
-                    remove_flag = True
-                    break
-            if remove_flag is True:
-                normal_set.remove(resource)
-    for item in normal_set:
-        full_resource_url = fill_url(host, item)
-        origin_set.add(full_resource_url)
-    normal_set.clear()
-    return origin_set, relay_resource_set
-
 
 def fill_url(host, part_url):
     """
@@ -116,26 +75,6 @@ def fill_url(host, part_url):
     else:
         full_url = part_url
     return full_url
-
-
-def simulation_browsing_website(host, filepath):
-    # 获取原始HTML文本
-    logger.info("%s start: %s", host, time.time())
-    html = get_origin_website_html(host)
-    # 初步解析里面的资源
-    logger.info("获取到原始HTML: %s", time.time())
-    resources = parse_web_resource(html)
-    logger.info("解析了所有资源: %s", time.time())
-    # 去除非法资源，分类不同下载渠道的资源，并填充对应的url,使得可以直接下载
-    origin_set, relay_resource_set = search_resource_in_relay(host, resources)
-    logger.info("获取到了所有的URL: %s", time.time())
-    resource_list = [origin_set, relay_resource_set]
-    for resource_set in resource_list:
-        for resource in resource_set:
-            # download_file(resource, filename=None, filepath=filepath)
-            get_resource(resource)
-            print(resource)
-    logger.info("完成: %s", time.time())
 
 
 def search_resource_in_relay2(host, resource_list):
@@ -185,23 +124,30 @@ def search_resource_in_relay2(host, resource_list):
     return origin_full_set, relay_full_set
 
 
-def get_defense_traffic(host):
-    # 获取原始HTML文本
-    logger.info("%s start:", host)
-    html = get_origin_website_html(host)
-    logger.info("获取到原始HTML")
-    # 初步解析里面的资源
-    resources = parse_web_resource(html)
-    logger.info("解析了所有资源")
-    # 去除非法资源，分类不同下载渠道的资源，并填充对应的url,使得可以直接下载
-    origin_set, relay_resource_set = search_resource_in_relay2(host, resources)
-    tmp1 = list(origin_set)
-    tmp2 = list(relay_resource_set)
-    last_list = tmp1 + tmp2
-    random.shuffle(last_list)
-    all_task = [executor.submit(get_resource, url, host) for url in last_list]
-    for future in as_completed(all_task):
-        data = future.result()
+def fill_all_resource(host, resource_list):
+    # 过滤开头
+    tmp_set = set()
+    # 保存能在目录服务器中查找到的URL
+    origin_set = set()
+    # 获取到原始读取数据
+    for SR in resource_list:
+        if SR == "":
+            tmp_set.add("")
+            continue
+        for start_item in start_white_list:
+            if SR.startswith(start_item):
+                tmp_set.add(SR)
+                break
+        for end_item in end_white_list:
+            if SR.endswith(end_item):
+                tmp_set.add(SR)
+                break
+    # 对origin_set里面元素进行填充，得到完整的URL，存到origin_full_set
+    true_set = resource_list.difference(tmp_set)
+    for item in true_set:
+        full_resource_url = fill_url(host, item)
+        origin_set.add(full_resource_url)
+    return origin_set
 
 
 def simulation_collect(url, round_number):
@@ -248,10 +194,8 @@ if __name__ == '__main__':
                 resources = parse_web_resource(html)
                 logger.info("解析了所有资源")
                 # 去除非法资源，分类不同下载渠道的资源，并填充对应的url,使得可以直接下载
-                origin_set, relay_resource_set = search_resource_in_relay2(host, resources)
-                tmp1 = list(origin_set)
-                tmp2 = list(relay_resource_set)
-                last_list = tmp1 + tmp2
+                origin_set = fill_all_resource(host, resources)
+                last_list = list(origin_set)
                 random.shuffle(last_list)
                 all_task = [executor.submit(get_resource, url, host) for url in last_list]
                 for future in as_completed(all_task):

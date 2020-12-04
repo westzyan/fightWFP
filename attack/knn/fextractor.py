@@ -165,7 +165,7 @@ if(not os.path.isdir(d['OUTPUT_LOC'])):
 for fname in flist:
     # if "-0.cell" in fname:
     #     print fname
-    tname = fname.split('/')[-1].split(".")[0] + ".cellkNN"
+    tname = fname.split('/')[-1].split(".")[0]
  
 
     #load up times, sizes

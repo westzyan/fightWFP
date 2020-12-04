@@ -39,6 +39,7 @@ round_end = int(cf.get("eth", "end"))
 param = float(cf.get("eth", "param"))
 
 def get_origin_website_html(url):
+    logger.info("下载原始HTML，%s", url)
     response = requests.get(url, headers=headers, proxies=proxies, verify=False)
     if response.status_code != 200:
         logger.error("下载原始HTML遇到错误，status_code: %s", response.status_code)
@@ -238,6 +239,12 @@ if __name__ == '__main__':
             line = line.strip('\n')  # 去掉列表中每一个元素的换行符
             url_list.append(line)
     print(url_list)
+    url_confusion_list = []
+    with open("../aleax_confusion.txt", "r") as f:
+        for line in f.readlines():
+            line = line.strip('\n')  # 去掉列表中每一个元素的换行符
+            url_confusion_list.append(line)
+    print(url_confusion_list)
     f.close()
     mkdir_save(filepath)
     executor = ProcessPoolExecutor(max_workers=40)
@@ -251,6 +258,9 @@ if __name__ == '__main__':
                 # 获取原始HTML文本
                 logger.info("%s start:", host)
                 html = get_origin_website_html(host)
+                executor.submit(get_origin_website_html, random.choice(url_confusion_list))
+                executor.submit(get_origin_website_html, random.choice(url_confusion_list))
+                executor.submit(get_origin_website_html, random.choice(url_confusion_list))
                 logger.info("获取到原始HTML")
                 # 初步解析里面的资源
                 resources = parse_web_resource(html)

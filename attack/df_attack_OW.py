@@ -14,7 +14,7 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 keras.backend.tensorflow_backend.set_session(tf.Session(config=config))
 # Load data for non-defended dataset for CW setting
-def LoadDataNoDefCW():
+def LoadDataNoDefOW():
     print("Loading defended dataset for closed-world scenario")
     # Point to the directory storing data
     # dataset_dir = '../dataset/ClosedWorld/NoDef/'
@@ -72,12 +72,12 @@ if __name__ == '__main__':
     LENGTH = 5000  # Packet sequence length
     OPTIMIZER = Adamax(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)  # Optimizer
 
-    NB_CLASSES = 50  # number of outputs = number of classes
+    NB_CLASSES = 51  # number of outputs = number of classes
     INPUT_SHAPE = (LENGTH, 1)
 
     # Data: shuffled and split between train and test sets
     print("Loading and preparing data for training, and evaluating the model")
-    X_train, y_train, X_valid, y_valid, X_test, y_test = LoadDataNoDefCW()
+    X_train, y_train, X_valid, y_valid, X_test, y_test = LoadDataNoDefOW()
     # Please refer to the dataset format in readme
     # K.set_image_dim_ordering("tf") # tf is tensorflow
 

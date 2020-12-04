@@ -1,7 +1,7 @@
 #for all attacks
-OPEN	1
-DATA_LOC	/media/zyan/文档/毕业设计/code/dataset/
-OUTPUT_LOC	/media/zyan/文档/毕业设计/code/dataset/my_knn_output/
+OPEN	0
+DATA_LOC	/media/zyan/文档/毕业设计/code/dataset/round1/
+OUTPUT_LOC	/media/zyan/文档/毕业设计/code/dataset/round1/my_knn_output/
 
 
 #for gen-list

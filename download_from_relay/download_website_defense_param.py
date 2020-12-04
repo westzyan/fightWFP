@@ -7,7 +7,7 @@ import copy
 import time
 import configparser
 import os
-from get_resource_location_pool import get_resource_from_DB, get_resource_from_DB_by_website
+from DB_utils import get_resource_from_DB, get_resource_from_DB_by_website
 from download_util import get_resource
 from download_util import headers, proxies
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -36,7 +36,7 @@ eth_name = cf.get("eth", "name")
 filepath = cf.get("eth", "path")
 round_start = int(cf.get("eth", "start"))
 round_end = int(cf.get("eth", "end"))
-
+param = float(cf.get("eth", "param"))
 
 def get_origin_website_html(url):
     response = requests.get(url, headers=headers, proxies=proxies, verify=False)
@@ -53,48 +53,6 @@ def parse_web_resource(html):
         resource_list = resource_list + matchs
     resource_list = set(resource_list)
     return resource_list
-
-
-def search_resource_in_relay(host, resource_list):
-    """
-    输入域名和解析到的资源列表，然后去数据库查找对应的修改后的文件地址，分离正常文件和修改后的文件
-    :param host:
-    :param resource_list:
-    :return:
-    """
-    relay_resource_set = set()
-    normal_set = set(copy.deepcopy(resource_list))
-    origin_set = set()
-    remove_flag = False
-    for resource in resource_list:
-        if resource == "":
-            normal_set.remove("")
-            continue
-        result = get_resource_from_DB(resource, False)
-        if result != 0:
-            # 找到修改后资源所在位置，并放到set里面
-            tmp1 = str(result.locations)[1:-1]
-            tmp2 = tmp1.split(",")
-            ip = random.choice(tmp2)
-            relay_resource_set.add("http://" + ip + "/" + result.resource)
-        else:
-            # 先去除非正常资源
-            remove_flag = False
-            for start_item in start_white_list:
-                if resource.startswith(start_item):
-                    remove_flag = True
-                    break
-            for end_item in end_white_list:
-                if resource.endswith(end_item):
-                    remove_flag = True
-                    break
-            if remove_flag is True:
-                normal_set.remove(resource)
-    for item in normal_set:
-        full_resource_url = fill_url(host, item)
-        origin_set.add(full_resource_url)
-    normal_set.clear()
-    return origin_set, relay_resource_set
 
 
 def fill_url(host, part_url):
@@ -117,25 +75,6 @@ def fill_url(host, part_url):
         full_url = part_url
     return full_url
 
-
-def simulation_browsing_website(host, filepath):
-    # 获取原始HTML文本
-    logger.info("%s start: %s", host, time.time())
-    html = get_origin_website_html(host)
-    # 初步解析里面的资源
-    logger.info("获取到原始HTML: %s", time.time())
-    resources = parse_web_resource(html)
-    logger.info("解析了所有资源: %s", time.time())
-    # 去除非法资源，分类不同下载渠道的资源，并填充对应的url,使得可以直接下载
-    origin_set, relay_resource_set = search_resource_in_relay(host, resources)
-    logger.info("获取到了所有的URL: %s", time.time())
-    resource_list = [origin_set, relay_resource_set]
-    for resource_set in resource_list:
-        for resource in resource_set:
-            # download_file(resource, filename=None, filepath=filepath)
-            get_resource(resource)
-            print(resource)
-    logger.info("完成: %s", time.time())
 
 
 def search_resource_in_relay2(host, resource_list):
@@ -185,23 +124,89 @@ def search_resource_in_relay2(host, resource_list):
     return origin_full_set, relay_full_set
 
 
-def get_defense_traffic(host):
-    # 获取原始HTML文本
-    logger.info("%s start:", host)
-    html = get_origin_website_html(host)
-    logger.info("获取到原始HTML")
-    # 初步解析里面的资源
-    resources = parse_web_resource(html)
-    logger.info("解析了所有资源")
-    # 去除非法资源，分类不同下载渠道的资源，并填充对应的url,使得可以直接下载
-    origin_set, relay_resource_set = search_resource_in_relay2(host, resources)
-    tmp1 = list(origin_set)
-    tmp2 = list(relay_resource_set)
-    last_list = tmp1 + tmp2
-    random.shuffle(last_list)
-    all_task = [executor.submit(get_resource, url, host) for url in last_list]
-    for future in as_completed(all_task):
-        data = future.result()
+
+def search_resource_in_relay_param(host, resource_list, param):
+    '''
+    将解析到的资源列表拆分为两部分：可以在中继上下载的资源， 不能在中继上下载的资源
+    根据参数，即在中继上下载资源数目占所有资源的比例，进行下一步拆分
+    origin_set length: ori_len
+    relay_resource_set: relay_len
+    if relay_len < resource_len * param:
+        relay_resource_set 全部随机在中继上补全URL
+    else
+        relay_resource_set 拆分成两个set,一个长度为resource_len * param，另一个长度为relay_len - resource_len * param
+        长度为resource_len * param的，转换为带随机中继IP的完整URL，另一个set和origin_set合并，并填充为带原始域名的完整URL
+    返回两个完整集合
+    :param host: 域名
+    :param resource_list: 资源集合
+    :param param: 参数，即在中继上下载资源数目占所有资源的比例
+    :return:
+    '''
+    relay_resource_set = set()
+    # 过滤开头
+    # 保存无效url
+    tmp_set = set()
+    # 保存能在目录服务器中查找到的URL
+    origin_set = set()
+    # 获取到原始读取数据
+    DB_set = get_resource_from_DB_by_website(host)
+    DB_dict = {}
+    for item in DB_set:
+        DB_dict[item[2]] = [item[3], item[4]]
+    for SR in resource_list:
+        if SR == "":
+            tmp_set.add("")
+            continue
+        for start_item in start_white_list:
+            if SR.startswith(start_item):
+                tmp_set.add(SR)
+                break
+        for end_item in end_white_list:
+            if SR.endswith(end_item):
+                tmp_set.add(SR)
+                break
+        if DB_dict.get(SR, "none") != "none":
+            relay_resource_set.add(SR)
+    # 暂存差集
+    tmp2_set = set(resource_list).difference(tmp_set)
+    # origin_set 得到需要从原始网站下载的不完整URL
+    origin_set = tmp2_set.difference(relay_resource_set)
+
+    origin_full_set = set()
+    relay_full_set = set()
+    logger.info("resource_list len: %s", len(resource_list))
+    logger.info("origin_set len: %s", len(origin_set))
+    logger.info("relay_resource_set len: %s", len(relay_resource_set))
+    # 对origin_set里面元素进行填充，得到完整的URL，存到origin_full_set
+    for item in origin_set:
+        full_resource_url = fill_url(host, item)
+        origin_full_set.add(full_resource_url)
+    valid_len = len(origin_set) + len(relay_resource_set)
+    if len(relay_resource_set) < valid_len * param:
+        for item in relay_resource_set:
+            value_list = DB_dict.get(item, "none")
+            ip_list = value_list[1][1:-1].split(",")
+            random_ip = random.choice(ip_list)
+            full_resource_url = "http://" + random_ip + "/param/" + value_list[0]
+            relay_full_set.add(full_resource_url)
+    else:
+        relay_resource_set = list(relay_resource_set)
+        random.shuffle(relay_resource_set)
+        true_relay_resource_set = relay_resource_set[0:int(valid_len * param)]
+        false_relay_resource_set = relay_resource_set[int(valid_len * param):]
+        for item in false_relay_resource_set:
+            full_resource_url = fill_url(host, item)
+            origin_full_set.add(full_resource_url)
+        for item in true_relay_resource_set:
+            value_list = DB_dict.get(item, "none")
+            ip_list = value_list[1][1:-1].split(",")
+            random_ip = random.choice(ip_list)
+            full_resource_url = "http://" + random_ip + "/param/" + value_list[0]
+            relay_full_set.add(full_resource_url)
+    logger.info("origin_full_set len: %s", len(origin_full_set))
+    logger.info("relay_full_set len: %s", len(relay_full_set))
+    return origin_full_set, relay_full_set
+
 
 
 def simulation_collect(url, round_number):
@@ -223,7 +228,10 @@ def mkdir_save(filepath):
             os.makedirs(path)
 
 
+
 if __name__ == '__main__':
+    # 引入参数阿尔法，代表在中继节点上取资源的比例
+    param_a = param
     url_list = []
     with open("../aleax_top.txt", "r") as f:
         for line in f.readlines():
@@ -248,7 +256,7 @@ if __name__ == '__main__':
                 resources = parse_web_resource(html)
                 logger.info("解析了所有资源")
                 # 去除非法资源，分类不同下载渠道的资源，并填充对应的url,使得可以直接下载
-                origin_set, relay_resource_set = search_resource_in_relay2(host, resources)
+                origin_set, relay_resource_set = search_resource_in_relay_param(host, resources, param_a)
                 tmp1 = list(origin_set)
                 tmp2 = list(relay_resource_set)
                 last_list = tmp1 + tmp2

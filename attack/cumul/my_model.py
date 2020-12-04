@@ -35,7 +35,7 @@ def GridSearch(train_X,train_Y):
     return clf
 
 
-dic = np.load("./results/round2.npy", allow_pickle=True).item()
+dic = np.load("/media/zyan/文档/毕业设计/code/dataset/round1/cumul/my_knn_data.npy", allow_pickle=True).item()
 X = np.array(dic['feature'])
 y = np.array(dic['label'])
 

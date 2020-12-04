@@ -30,8 +30,8 @@ def feature_transform_single_dir(dir, filepath, output_path):
 
 
 def feature_transform():
-    filepath = "/media/zyan/文档/毕业设计/code/dataset/round3/tcp_time_direction_len/"
-    output_path = "/media/zyan/文档/毕业设计/code/dataset/round3/my_knn_data/"
+    filepath = "/media/zyan/文档/毕业设计/code/dataset/round13/tcp_time_direction_len/"
+    output_path = "/media/zyan/文档/毕业设计/code/dataset/round13/my_knn_data/"
     dirs = os.listdir(filepath)
     executor = ProcessPoolExecutor(max_workers=30)
     for dir in dirs:
@@ -40,7 +40,7 @@ def feature_transform():
 
 
 def feature_extraction():
-    filepath = "/media/zyan/文档/毕业设计/code/dataset/round3/my_knn_data/"
+    filepath = "/media/zyan/文档/毕业设计/code/dataset/round1/my_knn_output/my_knn_data/"
     files = os.listdir(filepath)
     feature_label_list = []
     for file in files:
@@ -54,7 +54,7 @@ def feature_extraction():
             f.close()
             feature_label.append(label)
             feature_label_list.append(feature_label)
-    with open('/media/zyan/文档/毕业设计/code/dataset/round3/my_knn_10000.csv', 'w') as f:
+    with open('/media/zyan/文档/毕业设计/code/dataset/round1/my_knn_5000.csv', 'w') as f:
         for features in feature_label_list:
             for i in range(len(features) - 1):
                 f.write(features[i])
@@ -65,7 +65,7 @@ def feature_extraction():
 
 
 def load_data():
-    filepath = '/media/zyan/文档/毕业设计/code/dataset/round3/my_knn_10000.csv'
+    filepath = '/media/zyan/文档/毕业设计/code/dataset/round1/my_knn_5000.csv'
     data = np.loadtxt(filepath, delimiter=",")
     X = data[:, :-1]
     y = data[:, -1]
@@ -86,10 +86,10 @@ def attack():
 
     # 做预测以及计算准确率,计算准确率的逻辑也很简单，就是判断预测和实际值有多少是相等的。如果相等则算预测正确，否则预测失败。
     correct = np.count_nonzero((clf.predict(X_test) == y_test) == True)
-    print("正确率：%.3f" % (correct / len(X_test)))
+    print("正确率：%.8f" % (correct / len(X_test)))
 
 
 if __name__ == '__main__':
-    # feature_extraction()
     # feature_transform()
+    # feature_extraction()
     attack()
